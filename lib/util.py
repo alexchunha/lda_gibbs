@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import re
-import termcolor as tc
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 
 # Tokenizes the documents using the given vocabulary
-# The
 def tokenize(docs, vocab):
     counts = [{word: len(re.findall(word, doc, flags = re.I))
                for word in vocab}
@@ -17,28 +15,44 @@ def tokenize(docs, vocab):
                 [])
             for doc in counts]
 
-# Define functions that colorize words in a document according to their assigned
-# topic
-# 
-# Only two colors are supported, so coloration only distinguishes between "topic
-# 0" and "not topic 0"
+#-- FUNCTIONS FOR TURNING STRINGS INTO HTML --#
 
-colors = ['blue', 'yellow']
+# Turns a string into an HTML span with the specified properties
+def style_html(text, color = '', background = '', bold = False, underline = False):
+    base = "<span style = 'background: {}; " \
+                               "color: {}; " \
+                         "font-weight: {}; " \
+                     "text-decoration: {}; " \
+                         "font-family: monospace; font-size: 10pt;'>{}</span>"
+    args = (background, color, 'bold' if bold else '',
+            'underline' if underline else '', text)
+    return base.format(*args)
+
+html_space = style_html(' ')
+
+# Highlights all occurences of `word` in `text` with the specified `color`
+def hlite_word(word, color, text = None):
+    return re.sub(word,
+                  lambda m: style_html(m.group(0),
+                                       color = 'white',
+                                       background = color,
+                                       bold = True),
+                  text if text else word,
+                  flags = re.I)
 
 # Colorizes a single document
-def colorize_doc(doc, vocab, topics):
+def colorize_doc(doc, vocab, topics, colors):
     topic_iter = iter(topics)
+    doc = style_html(doc)
     for word in vocab:
         doc = re.sub(word,
-                     lambda m: tc.colored(m.group(0),
-                                          color = colors[min(next(topic_iter), 1)],
-                                          attrs = ['bold', 'reverse']),
-                     doc, flags = re.I)
+                     lambda m: style_html(m.group(0),
+                                          color = 'white',
+                                          background = colors[next(topic_iter)],
+                                          bold = True),
+                     doc,
+                     flags = re.I)
     return doc
-
-# Uses the single-document colorizer to colorize all documents
-def colorize(docs, vocab, topics):
-    return [colorize_doc(doc, vocab, tops) for doc, tops in zip(docs, topics)]
 
 #-- PLOTTING FUNCTIONS --#
 
